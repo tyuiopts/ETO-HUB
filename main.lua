@@ -15,9 +15,13 @@ redzlib:SetTheme("Dark")
 
 -- Tab 1: أدوات متنوعة
 local Tab1 = Window:MakeTab({"الأدوات", "Tools"})
+Window:SelectTab(Tab1)
+
 Tab1:AddSection({"عام"})
 Tab1:AddParagraph({"معلومات", "سكربت مقدم من ETO\nواجهة احترافية باستخدام RedzHub"})
+
 Tab1:AddButton({"Print رسالة", function() print("Hello World!") end})
+
 Tab1:AddToggle({
     Name = "Anti-AFK",
     Description = "منع الطرد بسبب الخمول",
@@ -33,72 +37,61 @@ Tab1:AddToggle({
         end
     end
 })
+
 Tab1:AddSlider({
     Name = "السرعة",
     Min = 16,
     Max = 200,
     Default = 16,
     Callback = function(Value)
-        local plr = game.Players.LocalPlayer
-        if plr.Character and plr.Character:FindFirstChild("Humanoid") then
-            plr.Character.Humanoid.WalkSpeed = Value
-        end
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
     end
 })
+
 Tab1:AddButton({"تشغيل الطيران", function()
     loadstring(game:HttpGet("https://pastebin.com/raw/4XcMN3qB"))()
 end})
 
--- Tab 2: تليبور ذكي مع صورة اللاعب وزر التنقل
+-- Tab 2: تليبور ذكي
 local Tab2 = Window:MakeTab({"التنقل", "Teleport"})
 
 local selectedPlayer = nil
-local playerImageObject = nil
-local playerNameParagraph = nil
+local imageShown = false
 
--- لتخزين الصورة والاسم عشان ما نضيف أكثر من مرة
-local function clearPlayerDisplay()
-    if playerImageObject then
-        playerImageObject:Destroy()
-        playerImageObject = nil
-    end
-    if playerNameParagraph then
-        playerNameParagraph:Destroy()
-        playerNameParagraph = nil
-    end
-end
+local function clearTab2()
+    Tab2:Clear()
+    Tab2:AddTextBox({
+        Name = "اسم اللاعب أو أول 3 حروف",
+        PlaceholderText = "مثال: eto",
+        Callback = function(input)
+            selectedPlayer = nil
+            imageShown = false
+            Tab2:Clear()
+            for _, player in ipairs(game.Players:GetPlayers()) do
+                if string.sub(string.lower(player.Name), 1, #input) == string.lower(input) then
+                    selectedPlayer = player
+                    break
+                end
+            end
 
-Tab2:AddTextBox({
-    Name = "اسم اللاعب أو أول 3 حروف",
-    PlaceholderText = "مثال: eto",
-    Callback = function(input)
-        clearPlayerDisplay()
-        selectedPlayer = nil
-        input = string.lower(input)
-        for _, player in ipairs(game.Players:GetPlayers()) do
-            if string.sub(string.lower(player.Name), 1, #input) == input then
-                selectedPlayer = player
-                break
+            if selectedPlayer then
+                local userId = selectedPlayer.UserId
+                local profileImage = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. userId .. "&width=420&height=420&format=png"
+
+                Tab2:AddParagraph({"اللاعب المحدد", selectedPlayer.Name})
+                Tab2:AddImage({ Image = profileImage, Size = UDim2.new(0, 100, 0, 100) })
+                Tab2:AddButton({"تنقّل إلى اللاعب", function()
+                    if selectedPlayer and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        game.Players.LocalPlayer.Character:MoveTo(selectedPlayer.Character.HumanoidRootPart.Position)
+                    else
+                        warn("لا يمكن التليبور. اللاعب غير موجود حالياً.")
+                    end
+                end})
+            else
+                Tab2:AddParagraph({"خطأ", "لم يتم العثور على لاعب بهذا الاسم"})
             end
         end
+    })
+end
 
-        if selectedPlayer then
-            local userId = selectedPlayer.UserId
-            local profileImage = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. userId .. "&width=420&height=420&format=png"
-
-            playerNameParagraph = Tab2:AddParagraph({"اللاعب المحدد", selectedPlayer.Name})
-            playerImageObject = Tab2:AddImage({ Image = profileImage, Size = UDim2.new(0, 100, 0, 100) })
-        else
-            Tab2:AddParagraph({"خطأ", "لم يتم العثور على لاعب بهذا الاسم"})
-        end
-    end
-})
-
-Tab2:AddButton({"تنقّل إلى اللاعب", function()
-    if selectedPlayer and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local plr = game.Players.LocalPlayer
-        plr.Character:MoveTo(selectedPlayer.Character.HumanoidRootPart.Position)
-    else
-        warn("لا يمكن التليبور. اللاعب غير موجود حالياً.")
-    end
-end})
+clearTab2()
